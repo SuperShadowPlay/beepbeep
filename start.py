@@ -1,3 +1,5 @@
+"""beepbeep discord bot. Licensed under MIT License."""
+
 import asyncio
 import discord
 import youtube_dl
@@ -14,6 +16,10 @@ elif discord.opus.is_loaded() is True:
 
 #Currently Playing
 currentPlaying = 'None'
+
+#Get token
+tokenFile = open('token.txt', 'r')
+TOKEN = tokenFile.read()
 
 
 def bigTime():
@@ -74,11 +80,13 @@ class Cmds(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def play(self, ctx, url):
-        """Streams from a url"""
+    async def play(self, ctx, *query):
+        """Streams from a url/search"""
 
         global currentPlaying
         channel = ctx.author.voice.channel
+
+        query = ' '.join(query)
 
         #Join channel if not already
         if ctx.voice_client.is_connected() is False:
@@ -90,7 +98,7 @@ class Cmds(commands.Cog):
             ctx.voice_client.stop()
 
         async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            player = await YTDLSource.from_url(query, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
         currentPlaying = 'Now playing: {}'.format(player.title)
@@ -110,16 +118,15 @@ class Cmds(commands.Cog):
 
     @commands.command()
     async def leave(self, ctx):
-        """Stops and disconnects the bot from voice"""
-
+        """Stop and disconnect the bot from voice."""
+        global currentPlaying
         currentPlaying = 'None'
         await ctx.voice_client.disconnect()
         print('Left voice || {}'.format(bigTime()))
 
     @commands.command()
     async def list(self, ctx):
-        """Lists the current song"""
-
+        """List the current song."""
         if currentPlaying is not 'None':
             await ctx.send('Currently playing: ' + currentPlaying)
         else:
@@ -127,8 +134,7 @@ class Cmds(commands.Cog):
 
     @commands.command()
     async def volume(self, ctx, volume: int):
-        """Changes the player's volume"""
-
+        """Change the player's volume."""
         if ctx.voice_client is None:
             return await ctx.send("Not connected to a voice channel.")
 
@@ -137,10 +143,9 @@ class Cmds(commands.Cog):
 
     @commands.command(name='help')
     async def _help(self, ctx):
-        """Lists commands."""
-
+        """List commands."""
         await ctx.send("""Beepbeep commands:
-        b/play <url> - Plays a YouTube URL
+        b/play <url> - Plays a YouTube URL/Searches for song
         b/pause - Pause/Unpause
         b/leave - Disconnects the bot
         b/list - List the current song
@@ -149,18 +154,22 @@ class Cmds(commands.Cog):
 
     @play.before_invoke
     async def ensure_voice(self, ctx):
+        """Make sure bot is connected to a voice channel.
+
+        To get going I stole the `basic_voice.py` example from
+        the offical discord.py repo, and this is left over. I'm going
+        to keep it for now since it can't hurt anything."""
         if ctx.voice_client is None:
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                await ctx.send("You are not connected to a voice channel.")
+                await ctx.send("Error: Author not connected to voice channel")
                 raise commands.CommandError("Author not connected to a voice channel.")
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
 
 
-bot = commands.Bot(command_prefix=commands.when_mentioned_or("b/"),
-                   description='Relatively simple music bot example')
+bot = commands.Bot(command_prefix=commands.when_mentioned_or("b/"))
 
 
 @bot.event
@@ -169,4 +178,4 @@ async def on_ready():
     print('------')
 bot.remove_command('help')
 bot.add_cog(Cmds(bot))
-bot.run('Add token here')
+bot.run(TOKEN)
