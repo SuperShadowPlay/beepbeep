@@ -174,8 +174,13 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or("b/"))
 
 @bot.event
 async def on_ready():
+    #Logged in
     print('Logged in as {0} ({0.id}) || {1}'.format(bot.user, bigTime()))
     print('------')
+
+    game = discord.Game("Use b/help")
+    await bot.change_presence(status=discord.Status.online, activity=game)
+
 bot.remove_command('help')
 bot.add_cog(Cmds(bot))
 bot.run(TOKEN)
