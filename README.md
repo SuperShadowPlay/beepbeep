@@ -10,3 +10,7 @@ If you do not know what any of this means, visit this link:
 https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token
 
 Use b/help to see the commands once the bot is running.
+
+TODO:
+
+Add process that occasionally removes videofiles OR saves them in a different directory.

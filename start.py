@@ -4,6 +4,7 @@ import asyncio
 import discord
 import youtube_dl
 import time
+from datetime import datetime
 
 from discord.ext import commands
 
@@ -98,11 +99,11 @@ class Cmds(commands.Cog):
             ctx.voice_client.stop()
 
         async with ctx.typing():
-            player = await YTDLSource.from_url(query, loop=self.bot.loop, stream=True)
+            player = await YTDLSource.from_url(query, loop=self.bot.loop, stream=False)
             ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
         currentPlaying = 'Now playing: {}'.format(player.title)
-        await ctx.send('Now playing: ' + currentPlaying)
+        await ctx.send(':radio: Now playing: ' + currentPlaying)
         print('Playing: {0} || {1}'.format(currentPlaying, bigTime()))
 
     @commands.command()
@@ -111,45 +112,84 @@ class Cmds(commands.Cog):
 
         if ctx.voice_client.is_paused() is False:
             ctx.voice_client.pause()
+            await ctx.send(':pause_button: Paused')
             print('Paused || {}'.format(bigTime()))
+
         elif ctx.voice_client.is_paused() is True:
             ctx.voice_client.resume()
+            await ctx.send(':arrow_forward: Unpaused')
             print('Unpaused || {}'.format(bigTime()))
 
     @commands.command()
-    async def leave(self, ctx):
+    async def stop(self, ctx):
         """Stop and disconnect the bot from voice."""
         global currentPlaying
         currentPlaying = 'None'
         await ctx.voice_client.disconnect()
+        await ctx.send(':stop_button: Stopped')
         print('Left voice || {}'.format(bigTime()))
 
     @commands.command()
     async def list(self, ctx):
         """List the current song."""
         if currentPlaying is not 'None':
-            await ctx.send('Currently playing: ' + currentPlaying)
+            await ctx.send(':cd: Currently playing: ' + currentPlaying)
         else:
-            await ctx.send('Nothing is playing')
+            await ctx.send(':red_circle: Nothing is playing :red_circle:')
 
     @commands.command()
     async def volume(self, ctx, volume: int):
         """Change the player's volume."""
         if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.")
+            return await ctx.send(':red_circle: Not connected to a voice channel :red_circle:')
 
         ctx.voice_client.source.volume = volume / 100
-        await ctx.send("Changed volume to {}%".format(volume))
+        await ctx.send(":sound: Changed volume to {}%".format(volume))
+
+    @commands.command()
+    async def clean(self, ctx):
+        #List that will hold to-be-deleted messages
+        deleteQueue = []
+
+        #Get datetime object that is 14 days old for after= limiter in ctx.history
+        oldYear = datetime.strftime(datetime.now(), '%Y')
+        oldMonth = datetime.strftime(datetime.now(), '%m')
+        oldDay = str(int(datetime.strftime(datetime.now(), '%d')) - 14)
+
+        oldTime = '{0}/{1}/{2}'.format(oldYear, oldMonth, oldDay)
+        oldTime = datetime.strptime(oldTime, '%Y/%m/%d')
+
+        #Get the last 100 messages from the past 14 days and loop through them
+        async for message in ctx.history(limit=100, after=oldTime):
+            msgSplit = list(message.content)
+            #Make sure message is not empty
+            if len(msgSplit) != 0:
+                #Add bot's messages to delete queue
+                if bot.user == message.author:
+                    deleteQueue.append(message)
+                #Add user commands to delete queue
+                elif 'b' is msgSplit[0] and '/' is msgSplit[1]:
+                    deleteQueue.append(message)
+
+        #Delete messages and print to console
+        await ctx.channel.delete_messages(deleteQueue)
+        print('Deleted {0} messages in {1}/{2} || {3}'.format(
+                                                              len(deleteQueue),
+                                                              ctx.guild,
+                                                              ctx.channel,
+                                                              bigTime()))
 
     @commands.command(name='help')
     async def _help(self, ctx):
         """List commands."""
-        await ctx.send("""Beepbeep commands:
-        b/play <url> - Plays a YouTube URL/Searches for song
-        b/pause - Pause/Unpause
-        b/leave - Disconnects the bot
-        b/list - List the current song
-        b/volume <volume> - Changes volume
+        await ctx.send(""":question: Beepbeep commands:
+        b/play <url> - Plays a YouTube URL/Searches for song.
+        b/pause - Pause/Unpause.
+        b/stop - Disconnects the bot.
+        b/list - List the current song.
+        b/volume <volume> - Changes volume.
+        b/clean - Remove bot's messages and any user's commands.
+        b/help - This command.
         """)
 
     @play.before_invoke
@@ -169,6 +209,7 @@ class Cmds(commands.Cog):
             ctx.voice_client.stop()
 
 
+#Init bot
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("b/"))
 
 
