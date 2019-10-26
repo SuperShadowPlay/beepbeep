@@ -3,9 +3,9 @@
 import asyncio
 import discord
 import youtube_dl
-import time
+import os
+import re
 from datetime import datetime
-
 from discord.ext import commands
 
 #Load Opus
@@ -23,9 +23,17 @@ tokenFile = open('token.txt', 'r')
 TOKEN = tokenFile.read()
 
 
+#Totally stole this from stackoverflow
+def removeSubstr(input_list, substr):
+    """Remove substring for deletion of .webm files"""
+    out_list = []
+    for element in input_list:
+        out_list.append(re.sub(substr, '_', element))
+    return out_list
+
 def bigTime():
-    """Get time in M/D/Y||H:M:S format."""
-    _bigTime = time.strftime('%D||%H:%M:%S')
+    """Get time in H:M:S ||Y/M/Dformat."""
+    _bigTime = datetime.strftime(datetime.now(), '%H:%M:%S||%y/%m/%d')
     return _bigTime
 
 
@@ -35,7 +43,7 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'outtmpl': '%(title)s',
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -105,6 +113,12 @@ class Cmds(commands.Cog):
         currentPlaying = 'Now playing: {}'.format(player.title)
         await ctx.send(':radio: Now playing: ' + currentPlaying)
         print('Playing: {0} || {1}'.format(currentPlaying, bigTime()))
+
+        #Removes downloaded videofile
+        removeFile = ''.join(removeSubstr([player.title], ' '))
+        await asyncio.sleep(20)
+        if os.path.isfile(removeFile):
+            os.remove(removeFile)
 
     @commands.command()
     async def pause(self, ctx):
