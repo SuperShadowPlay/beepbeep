@@ -5,11 +5,12 @@ import discord
 import youtube_dl
 import os
 import re
+import ctypes
 from datetime import datetime
 from discord.ext import commands
 
 #Load Opus
-discord.opus.load_opus('/usr/lib/x86_64-linux-gnu/libopus.so.0')
+ctypes.util.find_library('libopus.so')
 if discord.opus.is_loaded() is False:
     print('Opus did not load correctly')
 elif discord.opus.is_loaded() is True:
@@ -19,8 +20,8 @@ elif discord.opus.is_loaded() is True:
 currentPlaying = 'None'
 
 #Get token
-tokenFile = open('token.txt', 'r')
-TOKEN = tokenFile.read()
+TOKEN = open('token.txt', 'r').read()
+#TOKEN = tokenFile.strip()
 
 
 #Totally stole this from stackoverflow
@@ -238,4 +239,4 @@ async def on_ready():
 
 bot.remove_command('help')
 bot.add_cog(Cmds(bot))
-bot.run(TOKEN)
+bot.run(TOKEN.strip())
