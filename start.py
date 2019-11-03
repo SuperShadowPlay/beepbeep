@@ -169,7 +169,12 @@ class Cmds(commands.Cog):
         #Get datetime object that is 14 days old for after= limiter in ctx.history
         oldYear = datetime.strftime(datetime.now(), '%Y')
         oldMonth = datetime.strftime(datetime.now(), '%m')
-        oldDay = str(int(datetime.strftime(datetime.now(), '%d')) - 14)
+
+        #Day requires special fixing so it doesn't go into the negatives
+        oldDay = int(datetime.strftime(datetime.now(), '%d')) - 14
+        if oldDay < 1:
+            oldDay = 1
+        oldDay = str(oldDay)
 
         oldTime = '{0}/{1}/{2}'.format(oldYear, oldMonth, oldDay)
         oldTime = datetime.strptime(oldTime, '%Y/%m/%d')
