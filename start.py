@@ -167,6 +167,11 @@ class Cmds(commands.Cog):
         deleteQueue = []
 
         #Get datetime object that is 14 days old for after= limiter in ctx.history
+        """TODO:
+                Make it so instead of just not erroring out,
+                move back the month as well as the day, so it is
+                always 14 days back (the maximum age of a message
+                that can be deleted)."""
         oldYear = datetime.strftime(datetime.now(), '%Y')
         oldMonth = datetime.strftime(datetime.now(), '%m')
 
